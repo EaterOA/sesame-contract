@@ -16,10 +16,12 @@ setup(
     packages=find_packages(),
     include_package_data=True,
     install_requires=[
+        'cryptography',
     ],
     entry_points={
         'console_scripts': [
             'sesame-server = sesamecontract.server:main',
+            'sesame = sesamecontract.client:main',
         ],
     },
 )
