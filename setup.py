@@ -21,7 +21,7 @@ setup(
     ],
     entry_points={
         'console_scripts': [
-            'sesame-server = sesamecontract.sesameserver:main',
+            'sesame-server = sesamecontract.server.sesameserver:main',
             'sesame = sesamecontract.sesame:main',
         ],
     },
