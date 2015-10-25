@@ -1,0 +1,9 @@
+from sesamecontract.term.base import Term
+
+class EchoTerm(Term):
+
+    def __init__(self, fragment):
+        super().__init__(fragment, 'echo')
+
+    def compute_term(self):
+        return self.fragment
