@@ -17,7 +17,6 @@ setup(
     include_package_data=True,
     install_requires=[
         'cryptography',
-        'secretsharing',
     ],
     entry_points={
         'console_scripts': [

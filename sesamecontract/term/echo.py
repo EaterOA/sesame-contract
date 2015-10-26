@@ -1,4 +1,4 @@
-from sesamecontract.term.base import Term
+from sesamecontract.term import Term
 
 class EchoTerm(Term):
 

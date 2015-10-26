@@ -1,0 +1,56 @@
+import os
+from base64 import b64encode
+from cryptography.hazmat.primitives.ciphers import Cipher, algorithms, modes
+from cryptography.hazmat.backends import default_backend
+
+class SesameCrypto():
+
+    def __init__(self):
+        self.key = os.urandom(32)
+        self.iv = os.urandom(12)
+        self.backend = default_backend()
+
+    def get_key(self):
+        return b64encode(self.key)
+
+    def get_iv(self):
+        return b64encode(self.iv)
+
+    def encrypt(self, infile, outfile):
+        cipher = Cipher(algorithms.AES(self.key), modes.GCM(self.iv), backend=self.backend)
+        encryptor = cipher.encryptor()
+        while True:
+            data = infile.read(4096)
+            if not data:
+                break
+            outfile.write(encryptor.update(data))
+        outfile.write(encryptor.finalize())
+
+    def split_secret(self, secret, k, n):
+        convert_int = lambda s: int.from_bytes(s, byteorder='little')
+
+        # prime used to define finite field
+        p = 275990457285843570502088317104276687707
+
+        # uniformly-distributed generation of number [0, p)
+        def generate_int():
+            while True:
+                num = convert_int(os.urandom(16))
+                if num < p:
+                    return num
+
+        # generate k polynomial coefficients
+        coefficients = [convert_int(secret)]
+        coefficients += [generate_int() for _ in range(k-1)]
+
+        # horner's method to evaluate polynomial
+        def horner(x):
+            result = 0
+            for i in reversed(range(k)):
+                result = (result * x + coefficients[i]) % p
+            return result
+
+        # generate n points
+        points = ['{}-{}'.format(x, horner(x)) for x in range(1, n+1)]
+
+        return points
