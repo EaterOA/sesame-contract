@@ -1,11 +1,8 @@
 import argparse
 import logging
-import os
-from base64 import b64encode
-from cryptography.hazmat.primitives.ciphers import Cipher, algorithms, modes
-from cryptography.hazmat.backends import default_backend
 
 import sesamecontract.util.logging as logutil
+from sesamecontract.crypto import SesameCrypto
 
 logger = logging.getLogger(__name__)
 logger.setLevel(logging.DEBUG)
@@ -20,26 +17,16 @@ def parse_args():
 def main():
     logutil.set_stream_handler(logger)
     args = parse_args()
-    infile = open(args.file, "rb")
-    outfile = open(args.file + ".sesame", "wb")
-    outfile.write(b"=== Sesame ===\n")
-    outfile.write(b"ver: 0.1\n")
-    backend = default_backend()
-    key = os.urandom(32)
-    iv = os.urandom(12)
-    outfile.write(b"iv: " + b64encode(iv) + b"\n")
-    outfile.write(b"key: " + b64encode(key) + b"\n")
-    outfile.write(b"===\n")
-    cipher = Cipher(algorithms.AES(key), modes.GCM(iv), backend=backend)
-    encryptor = cipher.encryptor()
-    while True:
-        data = infile.read(4096)
-        if not data:
-            break
-        outfile.write(encryptor.update(data))
-    outfile.write(encryptor.finalize())
-    infile.close()
-    outfile.close()
+
+    crypto = SesameCrypto()
+    with open(args.file, "rb") as infile:
+        with open(args.file + ".sesame", "wb") as outfile:
+            outfile.write(b"=== Sesame ===\n")
+            outfile.write(b"ver: 0.1\n")
+            outfile.write(b"iv: " + crypto.get_iv() + b"\n")
+            outfile.write(b"key: " + crypto.get_key() + b"\n")
+            outfile.write(b"===\n")
+            crypto.encrypt(infile, outfile)
 
 if __name__ == '__main__':
     main()
