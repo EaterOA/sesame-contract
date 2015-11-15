@@ -26,6 +26,26 @@ class SesameCrypto():
             outfile.write(encryptor.update(data))
         outfile.write(encryptor.finalize())
 
+    def retrieve_secret(self, points, k):
+        if len(points) < k:
+            raise ValueError("Not enough points to reconstruct secret")
+
+        # straightforward implementation of Lagrange basis evaluation
+        a0 = 0
+        for point in points:
+            x, y = point
+            num = y
+            denom = 1
+            for pi in points:
+                xi = pi[0]
+                if xi == x:
+                    continue
+                num *= -xi
+                denom *= x - xi
+            a0 += num//denom
+
+        return a0
+
     def split_secret(self, secret, k, n):
         convert_int = lambda s: int.from_bytes(s, byteorder='little')
 
@@ -51,6 +71,6 @@ class SesameCrypto():
             return result
 
         # generate n points
-        points = ['{}-{}'.format(x, horner(x)) for x in range(1, n+1)]
+        points = [(x, horner(x)) for x in range(1, n+1)]
 
         return points
