@@ -26,9 +26,15 @@ class SesameCrypto():
             outfile.write(encryptor.update(data))
         outfile.write(encryptor.finalize())
 
-def retrieve_secret(self, points, k):
+
+def retrieve_secret(points, k, length=16):
     if len(points) < k:
         raise ValueError("Not enough points to reconstruct secret")
+    if length and type(length) != int:
+        raise ValueError("Type of length must be int")
+
+    # prime used to define finite field
+    p = 275990457285843570502088317104276687707
 
     # straightforward implementation of Lagrange basis evaluation
     a0 = 0
@@ -42,11 +48,23 @@ def retrieve_secret(self, points, k):
                 continue
             num *= -xi
             denom *= x - xi
-        a0 += num//denom
+        a0 = (a0 + num//denom) % p
 
-    return a0
+    def num_bytes(n):
+        num = 0
+        while n:
+            num += 1
+            n >>= 8
+        return num
 
-def split_secret(self, secret, k, n):
+    if not length:
+        length = num_bytes(a0)
+
+    secret = a0.to_bytes(length, byteorder='little')
+
+    return secret
+
+def split_secret(secret, k, n):
     convert_int = lambda s: int.from_bytes(s, byteorder='little')
 
     # prime used to define finite field
@@ -62,6 +80,7 @@ def split_secret(self, secret, k, n):
     # generate k polynomial coefficients
     coefficients = [convert_int(secret)]
     coefficients += [generate_int() for _ in range(k-1)]
+    print("coefficients:", coefficients)
 
     # horner's method to evaluate polynomial
     def horner(x):
