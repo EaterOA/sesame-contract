@@ -17,6 +17,7 @@ setup(
     include_package_data=True,
     install_requires=[
         'cryptography',
+        'nose',
     ],
     entry_points={
         'console_scripts': [
