@@ -4,6 +4,9 @@ from cryptography.hazmat.primitives.ciphers import Cipher, algorithms, modes
 from cryptography.hazmat.backends import default_backend
 
 class SesameCrypto():
+    """
+    Helper class that wraps the cryptography AES functions
+    """
 
     def __init__(self):
         self.key = os.urandom(32)
@@ -26,12 +29,13 @@ class SesameCrypto():
             outfile.write(encryptor.update(data))
         outfile.write(encryptor.finalize())
 
-
-def retrieve_secret(points, k, length=16):
+def retrieve_key(points, k):
+    """
+    Given points constructed from Shamir's secret sharing algorithm, recovers
+    the original 16-byte key
+    """
     if len(points) < k:
-        raise ValueError("Not enough points to reconstruct secret")
-    if length and type(length) != int:
-        raise ValueError("Type of length must be int")
+        raise ValueError("Not enough points to reconstruct key")
 
     # prime used to define finite field
     p = 275990457285843570502088317104276687707
@@ -50,21 +54,22 @@ def retrieve_secret(points, k, length=16):
             denom *= x - xi
         a0 = (a0 + num//denom) % p
 
-    def num_bytes(n):
-        num = 0
-        while n:
-            num += 1
-            n >>= 8
-        return num
+    key = a0.to_bytes(16, byteorder='little')
 
-    if not length:
-        length = num_bytes(a0)
+    return key
 
-    secret = a0.to_bytes(length, byteorder='little')
+def split_key(key, k, n):
+    """
+    Uses Shamir's secret sharing algorithm to split a 16-byte key into n points
+    with k threshold
+    """
 
-    return secret
+    if len(key) != 16:
+        raise ValueError("Key must be 16 bytes")
+    if k > n:
+        raise ValueError("Threshold should not be greater than number of points")
 
-def split_secret(secret, k, n):
+    # interpret int from bytes
     convert_int = lambda s: int.from_bytes(s, byteorder='little')
 
     # prime used to define finite field
@@ -78,7 +83,7 @@ def split_secret(secret, k, n):
                 return num
 
     # generate k polynomial coefficients
-    coefficients = [convert_int(secret)]
+    coefficients = [convert_int(key)]
     coefficients += [generate_int() for _ in range(k-1)]
     print("coefficients:", coefficients)
 
